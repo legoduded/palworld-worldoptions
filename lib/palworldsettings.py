@@ -119,22 +119,28 @@ class SettingStructs:
         return getattr(SettingStructs, option_name)
 
 
-def generate_json_config(config) -> Dict:
+def generate_json_config(config: str) -> Dict:
     json_config = {}
     for config_option in config.split(','):
-        key, value = config_option.split('=')
         try:
+            key, value = config_option.split('=', 1)
+            if key == "Difficulty":
+                continue
             config_properties = SettingStructs.get_config_option(key)
             if not config_properties.is_default(value):
                 json_config[key] = config_properties.json_struct(value)
         except AttributeError:
             print("Error loading", key)
+        except ValueError:
+            print(f"Error parsing {config_option}")
+            print("Something looks malformed in your config")
+            print("Open a bug report with your config if issues persists")
     return json_config
 
 
 def parse_config(config: str) -> str:
     return config\
-        .replace("OptionSettings=(Difficulty=None,", "")\
+        .replace("OptionSettings=(", "")\
         .replace(")", "")\
         .replace('"', "")
 
