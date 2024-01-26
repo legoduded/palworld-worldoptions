@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Dict
+import sys
 import os
+import re
 
 
 class StructTypes(Enum):
@@ -153,7 +155,9 @@ def load_palworldsettings(path: str) -> str:
                 config = line
         if config is None:
             print("Failed to get OptionSettings")
-            exit(1)
+            print("Is your PalWorldSettings.ini formatted correctly?")
+            input("Press RETURN to close")
+            sys.exit(1)
     return config
 
 
