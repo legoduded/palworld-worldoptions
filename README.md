@@ -4,23 +4,14 @@ A tool for creating WorldOption.sav and applying the PalWorldSettings.ini for de
 
 ## Background
 
-BaseCampWorkerMaxNum in the PalWorldSettings.ini doesn't seem to load into dedicated servers.
-However there is a workaround! Using the WorldOption.sav the server will ignore PalWorldSettings.ini and load the 
-server settings from WorldOption.sav which will apply the BaseCampWorkerMaxNum. But since PalWorldSettings.ini is
-ignored, I created this tool to help others running dedicated servers migrate their configs into WorldOption.sav
-
-## Requirements
-### Running Via EXE
-Just drop it into your save file
-
-### Running Via Python
-
-Python 3.10 or later
-Linux Users will also need to install uesave
-- https://github.com/trumank/uesave-rs
+BaseCampWorkerMaxNum in PalWorldSettings.ini doesn't load on dedicated servers.\
+However there is a workaround!\
+\
+Placing WorldOption.sav with a modified BaseCampWorkerMaxNum in your dedicated server save will apply the configured BaseCampWorkerMaxNum.\
+However PalWorldSettings.ini will be ignored!\
+This tool will create a WorldOption.sav with your PalWorldSettings.ini applied to it
 
 ## Using the EXE
-
 - Shutdown your server
 - Drag and drop PalWorldSettings.ini onto the exe or run in the same directory
 - Copy WorldOption.sav to your save directory with LevelMeta.sav and Level.sav
@@ -30,7 +21,11 @@ Example:
 
 ![tutorial](/assets/example.gif)
 ## Using the Scripts
-The exe should work for most people. If you're running a dedicated linux server you can run the tool via the scripts
+The exe should work for most people. If you're running a dedicated linux server you can run the tool via the scripts\
+\
+Python 3.10 or later\
+Linux Users will also need to install uesave
+- https://github.com/trumank/uesave-rs
 
 Help Dialog
 ```console
