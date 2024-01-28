@@ -157,7 +157,7 @@ def parse_config(config: str) -> str:
 
 
 def load_palworldsettings(path: str) -> str:
-    with open(path) as f:
+    with open(path, encoding="utf8") as f:
         config = None
         for line in f:
             if "OptionSettings" in line:
