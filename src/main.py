@@ -18,12 +18,22 @@ def exceptionhook(type, value, traceback, oldhook=sys.excepthook):
 sys.excepthook = exceptionhook
 
 
-def game_files_exist(settings_file: str) -> bool:
-    return os.path.isfile(settings_file)
+def settings_check(path: str) -> None:
+    if os.path.isfile(path):
+        print("Found settings")
+    else:
+        print(f"Could not find PalWorldSettings.ini at {path}")
+        input("Press RETURN to close")
+        sys.exit(1)
 
 
-def uesave_exists(path: str) -> bool:
-    return os.path.exists(path)
+def uesave_check(path: str) -> None:
+    if os.path.isfile(path):
+        print("Found uesave")
+    else:
+        print(f"uesave does not exist at {path}")
+        input("Press RETURN to close")
+        sys.exit(1)
 
 
 def save_worldoptions(uesave_path: str, worldoption: Dict, output_path: str) -> None:
@@ -33,18 +43,8 @@ def save_worldoptions(uesave_path: str, worldoption: Dict, output_path: str) -> 
 
 def convert_to_worldoptions(uesave_path: str, settings_file: str, output_path: str) -> None:
     # Make sure files exist
-    if game_files_exist(settings_file):
-        print("Found settings")
-    else:
-        print(f"Could not find PalWorldSettings.ini at {settings_file}")
-        input("Press RETURN to close")
-        sys.exit(1)
-    if uesave_exists(uesave_path):
-        print("Found uesave")
-    else:
-        print(f"uesave does not exist at {uesave_path}")
-        input("Press RETURN to close")
-        sys.exit(1)
+    uesave_check(uesave_path)
+    settings_check(settings_file)
     config_settings_json = create_palworldsettings(settings_file)
     save_worldoptions(uesave_path, config_settings_json, output_path)
     print("Complete!")

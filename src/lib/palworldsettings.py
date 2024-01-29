@@ -1,7 +1,10 @@
 from enum import Enum
 from typing import Dict
 import sys
-import os
+import re
+
+
+DEATHPENALTY_VALUES = ["None", "Item", "ItemAndEquipment", "All"]
 
 
 class StructTypes(Enum):
@@ -20,14 +23,25 @@ class ConfigOption:
 
     def _typecast(self, value):
         if self.struct == StructTypes.Int:
-            return int(value)
+            # work around if the values are a float
+            return int(float(value))
         elif self.struct == StructTypes.Float:
             return float(value)
         elif self.struct == StructTypes.Bool:
-            if value.lower() == "false":
+            if value.lower() in ["false", "0"]:
                 return False
             else:
                 return True
+        elif self.struct == StructTypes.Enum:
+            if len(value) == 1:
+                # Going to assume its an int
+                index_value = int(value)
+                if index_value >= len(DEATHPENALTY_VALUES):
+                    raise AttributeError(f"{value} is not a valid option for DeathPenalty")
+                else:
+                    return DEATHPENALTY_VALUES[index_value]
+            else:
+                return value
         else:
             return value
 
@@ -36,21 +50,21 @@ class ConfigOption:
 
     def json_struct(self, value) -> Dict:
         if self.struct == StructTypes.Enum:
-            deathpenalty_values = ["None", "Item", "ItemAndEquipment", "All"]
+
             if len(value) == 1:
                 # Going to assume its an int
                 index_value = int(value)
-                if index_value > len(deathpenalty_values):
+                if index_value >= len(DEATHPENALTY_VALUES):
                     raise AttributeError(f"{value} is not a valid option for DeathPenalty")
             else:
                 # Lets make this case insensitive
-                if value.lower() in [death.lower() for death in deathpenalty_values]:
-                    index_value = [death.lower() for death in deathpenalty_values].index(value.lower())
+                if value.lower() in [death.lower() for death in DEATHPENALTY_VALUES]:
+                    index_value = [death.lower() for death in DEATHPENALTY_VALUES].index(value.lower())
                 else:
                     raise AttributeError(f"{value} is not a valid option for DeathPenalty")
             return {
                 self.struct.name: {
-                    "value": f"EPalOptionWorldDeathPenalty::{deathpenalty_values[index_value]}",
+                    "value": f"EPalOptionWorldDeathPenalty::{DEATHPENALTY_VALUES[index_value]}",
                     "enum_type": "EPalOptionWorldDeathPenalty"
                 }
             }
@@ -132,18 +146,22 @@ class SettingStructs:
 
 def generate_json_config(config: str) -> Dict:
     json_config = {}
-    for config_option in config.split(','):
+    tokens = re.findall(r'(\w.*?)=([^"].*?|".*?")((?=,)|$)', config)
+    for key, value, _ in tokens:
         try:
-            key, value = config_option.split('=', 1)
             if key == "Difficulty":
                 continue
+            if '"' in value:
+                value = re.match(r'^"(.*)"$', value.strip()).group(1)
+                # if it was already escaped in the config
+                value = value.replace('\\"', '"')
             config_properties = SettingStructs.get_config_option(key)
             if not config_properties.is_default(value):
                 json_config[key] = config_properties.json_struct(value)
         except AttributeError:
             print("Error loading", key)
         except ValueError:
-            print(f"Error parsing {config_option}")
+            print(f"Error parsing {key}:{value}")
             print("Something looks malformed in your config")
             print("Open a bug report with your config if issues persists")
     return json_config
@@ -152,8 +170,7 @@ def generate_json_config(config: str) -> Dict:
 def parse_config(config: str) -> str:
     return config\
         .replace("OptionSettings=(", "")\
-        .replace(")", "")\
-        .replace('"', "")
+        .strip(") ")
 
 
 def load_palworldsettings(path: str) -> str:
