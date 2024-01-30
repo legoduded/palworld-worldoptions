@@ -1,6 +1,9 @@
 # palworld-worldoptions
 
 A tool for creating WorldOption.sav and applying the PalWorldSettings.ini for dedicated servers
+\
+\
+I also created a web version of this tool: https://palworldoptions.com/
 
 ## Background
 
@@ -17,11 +20,14 @@ This tool will create a WorldOption.sav with your PalWorldSettings.ini applied t
 - Copy WorldOption.sav to your save directory with LevelMeta.sav and Level.sav
 - Start your server and check your settings
 
+WorldOption.sav created via the exe can be used for windows and/or linux dedicated servers
+\
+\
 Example:
 
 ![tutorial](/assets/example.gif)
 ## Using the Scripts
-The exe should work for most people. If you're running a dedicated linux server you can run the tool via the scripts\
+The exe should work for most people. If you're running linux you can run the tool via the scripts\
 \
 Python 3.10 or later\
 Linux Users will also need to install uesave

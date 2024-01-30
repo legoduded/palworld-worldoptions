@@ -3,6 +3,8 @@ name: Package exe with PyInstaller - Windows
 on:
   push:
     branches: [ master ]
+    paths:
+      - src/**
 
 jobs:
   build_release:

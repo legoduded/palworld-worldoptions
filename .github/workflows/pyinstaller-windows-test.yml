@@ -1,8 +1,10 @@
-name: Package exe with PyInstaller - Windows
+name: Package exe with PyInstaller - Windows Test
 
 on:
   push:
     branches: [ test ]
+    paths:
+      - src/**
 
 jobs:
   build_release:
