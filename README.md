@@ -26,6 +26,9 @@ WorldOption.sav created via the exe can be used for windows and/or linux dedicat
 Example:
 
 ![tutorial](/assets/example.gif)
+\
+\
+If you want to call the EXE from a script add the `--script` flag to make it non-interactive
 ## Using the Scripts
 The exe should work for most people. If you're running linux you can run the tool via the scripts\
 \
@@ -36,6 +39,7 @@ Linux Users will also need to install uesave
 Help Dialog
 ```console
 usage: palworld-worldoptions [-h] [--uesave UESAVE] [--output OUTPUT]
+                             [--script]
                              [settings_file]
 
 Creates a worldoptions.sav file for dedicated servers
@@ -47,6 +51,7 @@ options:
   -h, --help       show this help message and exit
   --uesave UESAVE  uesave file location
   --output OUTPUT  output directory for WorldOption.sav
+  --script         Don't ask for input when using the exe
 ```
 
 Example
@@ -59,7 +64,6 @@ Converting JSON
 Converted /mnt/g/pal/steamcmd/steamapps/common/PalServer/Pal/Saved/SaveGames/0/8FAEE1FC44A4A5032BC92F8BCFD43AE3/WorldOption.sav.json to /mnt/g/pal/steamcmd/steamapps/common/PalServer/Pal/Saved/SaveGames/0/8FAEE1FC44A4A5032BC92F8BCFD43AE3/WorldOption.sav
 Complete!
 Restart your palworld server to apply the changes
-Press RETURN to close
 ```
 
 ## Thanks

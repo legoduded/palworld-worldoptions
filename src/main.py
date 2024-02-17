@@ -7,12 +7,15 @@ import os
 from lib.palsav import convert_to_save
 from lib.palworldsettings import create_palworldsettings
 
+IS_INTERACTIVE = False
+
 
 def exceptionhook(type, value, traceback, oldhook=sys.excepthook):
     oldhook(type, value, traceback)
-    print("Looks like you encountered a critcal error")
+    print("Looks like you encountered a critical error")
     print("Check your settings and open a bug report if the issue persists")
-    input("Press RETURN to close")
+    if IS_INTERACTIVE:
+        input("Press RETURN to close")
 
 
 sys.excepthook = exceptionhook
@@ -23,7 +26,8 @@ def settings_check(path: str) -> None:
         print("Found settings")
     else:
         print(f"Could not find PalWorldSettings.ini at {path}")
-        input("Press RETURN to close")
+        if IS_INTERACTIVE:
+            input("Press RETURN to close")
         sys.exit(1)
 
 
@@ -32,7 +36,8 @@ def uesave_check(path: str) -> None:
         print("Found uesave")
     else:
         print(f"uesave does not exist at {path}")
-        input("Press RETURN to close")
+        if IS_INTERACTIVE:
+            input("Press RETURN to close")
         sys.exit(1)
 
 
@@ -49,7 +54,8 @@ def convert_to_worldoptions(uesave_path: str, settings_file: str, output_path: s
     save_worldoptions(uesave_path, config_settings_json, output_path)
     print("Complete!")
     print("Restart your palworld server to apply the changes")
-    input("Press RETURN to close")
+    if IS_INTERACTIVE:
+        input("Press RETURN to close")
 
 
 def main() -> None:
@@ -71,8 +77,15 @@ def main() -> None:
     parser.add_argument('--output',
                         default=running_dir,
                         help='output directory for WorldOption.sav')
+    parser.add_argument('--script',
+                        action='store_true',
+                        help="Don't ask for input when using the exe"
+                        )
 
     args = parser.parse_args()
+    if getattr(sys, 'frozen', False) and not args.script:
+        global IS_INTERACTIVE
+        IS_INTERACTIVE = True
     convert_to_worldoptions(args.uesave, args.settings_file, args.output)
 
 
