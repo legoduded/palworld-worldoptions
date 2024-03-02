@@ -138,6 +138,7 @@ class SettingStructs:
     Region = ConfigOption("Region", StructTypes.Str, "")
     bUseAuth = ConfigOption("bUseAuth", StructTypes.Bool, True)
     BanListURL = ConfigOption("BanListURL", StructTypes.Str, "https://api.palworldgame.com/api/banlist.txt")
+    bShowPlayerList = ConfigOption("bShowPlayerList", StructTypes.Bool, False)
 
     @staticmethod
     def get_config_option(option_name: str) -> ConfigOption:
