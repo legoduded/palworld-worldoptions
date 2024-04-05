@@ -138,7 +138,10 @@ class SettingStructs:
     Region = ConfigOption("Region", StructTypes.Str, "")
     bUseAuth = ConfigOption("bUseAuth", StructTypes.Bool, True)
     BanListURL = ConfigOption("BanListURL", StructTypes.Str, "https://api.palworldgame.com/api/banlist.txt")
+    RESTAPIEnabled = ConfigOption("RESTAPIEnabled", StructTypes.Bool, False)
+    RESTAPIPort = ConfigOption("RESTAPIPort", StructTypes.Int, 8212)
     bShowPlayerList = ConfigOption("bShowPlayerList", StructTypes.Bool, False)
+    bIsUseBackupSaveData = ConfigOption("bIsUseBackupSaveData", StructTypes.Bool, True)
 
     @staticmethod
     def get_config_option(option_name: str) -> ConfigOption:
