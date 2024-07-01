@@ -110,6 +110,7 @@ class SettingStructs:
     DropItemMaxNum = ConfigOption("DropItemMaxNum", StructTypes.Int, 3000)
     DropItemMaxNum_UNKO = ConfigOption("DropItemMaxNum_UNKO", StructTypes.Int, 100)
     BaseCampMaxNum = ConfigOption("BaseCampMaxNum", StructTypes.Int, 128)
+    BaseCampMaxNumInGuild = ConfigOption("BaseCampMaxNumInGuild", StructTypes.Int, 4)
     BaseCampWorkerMaxNum = ConfigOption("BaseCampWorkerMaxNum", StructTypes.Int, 15)
     DropItemAliveMaxHours = ConfigOption("DropItemAliveMaxHours", StructTypes.Float, 1.000000)
     bAutoResetGuildNoOnlinePlayers = ConfigOption("bAutoResetGuildNoOnlinePlayers", StructTypes.Bool, False)
