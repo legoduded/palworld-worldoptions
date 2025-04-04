@@ -1,10 +1,7 @@
 from enum import Enum
-from typing import Dict
+from typing import Dict, List
 import sys
 import re
-
-
-DEATHPENALTY_VALUES = ["None", "Item", "ItemAndEquipment", "All"]
 
 
 class StructTypes(Enum):
@@ -13,7 +10,85 @@ class StructTypes(Enum):
     Float = 3
     Bool = 4
     Enum = 5
+    Array = 6
 
+
+class ArrayStruct:
+    def __init__(self, type: str, values: List[str]):
+        self.type = type
+        self.values = values
+
+    def get_value(self, values: List) -> List[str]:
+        return_values = []
+        for value in values:
+            if len(value) == 1:
+                # Going to assume it's an int
+                index_value = int(value)
+                if index_value >= len(self.values):
+                    raise AttributeError(f"{value} is not a valid option for {self.type}")
+                else:
+                    return_values.append(self.values[index_value])
+            else:
+                return_values.append(value)
+        return return_values
+
+    def json_struct(self, values) -> dict:
+        index_values = []
+        for value in values:
+            if len(value) == 1:
+                # Going to assume it's an int
+                index_value = int(value)
+                if index_value >= len(self.values):
+                    raise AttributeError(f"{value} is not a valid option for {self.type}")
+                index_values.append(index_value)
+            else:
+                # Let's make this case-insensitive
+                if value.lower() in [val.lower() for val in self.values]:
+                    index_values.append([val.lower() for val in self.values].index(value.lower()))
+                else:
+                    raise AttributeError(f"{value} is not a valid option for {self.type}")
+        return {
+            "array_type": "EnumProperty",
+            "value": {
+                "Base": {
+                    "Enum": [f"{self.type}::{self.values[index_value]}" for index_value in sorted(index_values)]
+                }
+            }
+        }
+
+
+class EnumStruct:
+    def __init__(self, type: str, values: List[str]):
+        self.type = type
+        self.values = values
+
+    def get_value(self, value) -> str:
+        if len(value) == 1:
+            # Going to assume it's an int
+            index_value = int(value)
+            if index_value >= len(self.values):
+                raise AttributeError(f"{value} is not a valid option for {self.type}")
+            else:
+                return self.values[index_value]
+        else:
+            return value
+
+    def json_struct(self, value) -> dict:
+        if len(value) == 1:
+            # Going to assume its an int
+            index_value = int(value)
+            if index_value >= len(self.values):
+                raise AttributeError(f"{value} is not a valid option for {self.type}")
+        else:
+            # Let's make this case-insensitive
+            if value.lower() in [val.lower() for val in self.values]:
+                index_value = [val.lower() for val in self.values].index(value.lower())
+            else:
+                raise AttributeError(f"{value} is not a valid option for {self.type}")
+        return {
+            "value": f"{self.type}::{self.values[index_value]}",
+            "enum_type": self.type
+        }
 
 class ConfigOption:
     def __init__(self, option_name: str, struct: StructTypes, default_value):
@@ -33,40 +108,25 @@ class ConfigOption:
             else:
                 return True
         elif self.struct == StructTypes.Enum:
-            if len(value) == 1:
-                # Going to assume its an int
-                index_value = int(value)
-                if index_value >= len(DEATHPENALTY_VALUES):
-                    raise AttributeError(f"{value} is not a valid option for DeathPenalty")
-                else:
-                    return DEATHPENALTY_VALUES[index_value]
-            else:
-                return value
+            return ENUM_VALUES[self.option_name].get_value(value)
+        elif self.struct == StructTypes.Array:
+            return ARRAY_VALUES[self.option_name].get_value(value)
         else:
             return value
 
     def is_default(self, value) -> bool:
+        if self.struct == StructTypes.Array:
+            return set(self.default_value) == set(self._typecast(value))
         return self.default_value == self._typecast(value)
 
     def json_struct(self, value) -> Dict:
         if self.struct == StructTypes.Enum:
-
-            if len(value) == 1:
-                # Going to assume its an int
-                index_value = int(value)
-                if index_value >= len(DEATHPENALTY_VALUES):
-                    raise AttributeError(f"{value} is not a valid option for DeathPenalty")
-            else:
-                # Lets make this case insensitive
-                if value.lower() in [death.lower() for death in DEATHPENALTY_VALUES]:
-                    index_value = [death.lower() for death in DEATHPENALTY_VALUES].index(value.lower())
-                else:
-                    raise AttributeError(f"{value} is not a valid option for DeathPenalty")
             return {
-                self.struct.name: {
-                    "value": f"EPalOptionWorldDeathPenalty::{DEATHPENALTY_VALUES[index_value]}",
-                    "enum_type": "EPalOptionWorldDeathPenalty"
-                }
+                self.struct.name: ENUM_VALUES[self.option_name].json_struct(value)
+            }
+        if self.struct == StructTypes.Array:
+            return {
+                self.struct.name: ARRAY_VALUES[self.option_name].json_struct(value)
             }
         else:
             return {
@@ -77,6 +137,9 @@ class ConfigOption:
 
 
 class SettingStructs:
+    RandomizerType = ConfigOption("RandomizerType", StructTypes.Enum, "None")
+    RandomizerSeed = ConfigOption("RandomizerSeed", StructTypes.Str, "")
+    bIsRandomizerPalLevelRandom = ConfigOption("bIsRandomizerPalLevelRandom", StructTypes.Bool, False)
     DayTimeSpeedRate = ConfigOption("DayTimeSpeedRate", StructTypes.Float, 1.000000)
     NightTimeSpeedRate = ConfigOption("NightTimeSpeedRate", StructTypes.Float, 1.000000)
     ExpRate = ConfigOption("ExpRate", StructTypes.Float, 1.000000)
@@ -94,6 +157,7 @@ class SettingStructs:
     PalStaminaDecreaceRate = ConfigOption("PalStaminaDecreaceRate", StructTypes.Float, 1.000000)
     PalAutoHPRegeneRate = ConfigOption("PalAutoHPRegeneRate", StructTypes.Float, 1.000000)
     PalAutoHpRegeneRateInSleep = ConfigOption("PalAutoHpRegeneRateInSleep", StructTypes.Float, 1.000000)
+    BuildObjectHpRate = ConfigOption("BuildObjectHpRate", StructTypes.Float, 1.000000)
     BuildObjectDamageRate = ConfigOption("BuildObjectDamageRate", StructTypes.Float, 1.000000)
     BuildObjectDeteriorationDamageRate = ConfigOption("BuildObjectDeteriorationDamageRate", StructTypes.Float, 1.000000)
     CollectionDropRate = ConfigOption("CollectionDropRate", StructTypes.Float, 1.000000)
@@ -110,22 +174,29 @@ class SettingStructs:
     DropItemMaxNum = ConfigOption("DropItemMaxNum", StructTypes.Int, 3000)
     DropItemMaxNum_UNKO = ConfigOption("DropItemMaxNum_UNKO", StructTypes.Int, 100)
     BaseCampMaxNum = ConfigOption("BaseCampMaxNum", StructTypes.Int, 128)
-    BaseCampMaxNumInGuild = ConfigOption("BaseCampMaxNumInGuild", StructTypes.Int, 4)
     BaseCampWorkerMaxNum = ConfigOption("BaseCampWorkerMaxNum", StructTypes.Int, 15)
     DropItemAliveMaxHours = ConfigOption("DropItemAliveMaxHours", StructTypes.Float, 1.000000)
     bAutoResetGuildNoOnlinePlayers = ConfigOption("bAutoResetGuildNoOnlinePlayers", StructTypes.Bool, False)
     AutoResetGuildTimeNoOnlinePlayers = ConfigOption("AutoResetGuildTimeNoOnlinePlayers", StructTypes.Float, 72.000000)
     GuildPlayerMaxNum = ConfigOption("GuildPlayerMaxNum", StructTypes.Int, 20)
+    BaseCampMaxNumInGuild = ConfigOption("BaseCampMaxNumInGuild", StructTypes.Int, 4)
     PalEggDefaultHatchingTime = ConfigOption("PalEggDefaultHatchingTime", StructTypes.Float, 72.000000)
     WorkSpeedRate = ConfigOption("WorkSpeedRate", StructTypes.Float, 1.000000)
+    AutoSaveSpan = ConfigOption("AutoSaveSpan", StructTypes.Float, 30.000000)
     bIsMultiplay = ConfigOption("bIsMultiplay", StructTypes.Bool, False)
     bIsPvP = ConfigOption("bIsPvP", StructTypes.Bool, False)
+    bHardcore = ConfigOption("bHardcore", StructTypes.Bool, False)
+    bPalLost = ConfigOption("bPalLost", StructTypes.Bool, False)
+    bCharacterRecreateInHardcore = ConfigOption("bCharacterRecreateInHardcore", StructTypes.Bool, False)
     bCanPickupOtherGuildDeathPenaltyDrop = ConfigOption("bCanPickupOtherGuildDeathPenaltyDrop", StructTypes.Bool, False)
     bEnableNonLoginPenalty = ConfigOption("bEnableNonLoginPenalty", StructTypes.Bool, True)
     bEnableFastTravel = ConfigOption("bEnableFastTravel", StructTypes.Bool, True)
     bIsStartLocationSelectByMap = ConfigOption("bIsStartLocationSelectByMap", StructTypes.Bool, True)
     bExistPlayerAfterLogout = ConfigOption("bExistPlayerAfterLogout", StructTypes.Bool, False)
     bEnableDefenseOtherGuildPlayer = ConfigOption("bEnableDefenseOtherGuildPlayer", StructTypes.Bool, False)
+    bInvisibleOtherGuildBaseCampAreaFX = ConfigOption("bInvisibleOtherGuildBaseCampAreaFX", StructTypes.Bool, False)
+    bBuildAreaLimit = ConfigOption("bBuildAreaLimit", StructTypes.Bool, False)
+    ItemWeightRate = ConfigOption("ItemWeightRate", StructTypes.Float, 1.000000)
     CoopPlayerMaxNum = ConfigOption("CoopPlayerMaxNum", StructTypes.Int, 4)
     ServerPlayerMaxNum = ConfigOption("ServerPlayerMaxNum", StructTypes.Int, 32)
     ServerName = ConfigOption("ServerName", StructTypes.Str, "Default Palworld Server")
@@ -142,21 +213,9 @@ class SettingStructs:
     RESTAPIEnabled = ConfigOption("RESTAPIEnabled", StructTypes.Bool, False)
     RESTAPIPort = ConfigOption("RESTAPIPort", StructTypes.Int, 8212)
     bShowPlayerList = ConfigOption("bShowPlayerList", StructTypes.Bool, False)
-    bIsUseBackupSaveData = ConfigOption("bIsUseBackupSaveData", StructTypes.Bool, True)
-    Difficulty = ConfigOption("Difficulty", StructTypes.Enum, "None")
-    RandomizerType = ConfigOption("RandomizerType", StructTypes.Enum, "None")
-    RandomizerSeed = ConfigOption("RandomizerSeed", StructTypes.Str, "")
-    bIsRandomizerPalLevelRandom = ConfigOption("bIsRandomizerPalLevelRandom", StructTypes.Bool, False)
-    BuildObjectHpRate = ConfigOption("BuildObjectHpRate", StructTypes.Float, 1.000000)
-    AutoSaveSpan = ConfigOption("AutoSaveSpan", StructTypes.Float, 30.000000)
-    bHardcore = ConfigOption("bHardcore", StructTypes.Bool, False)
-    bPalLost = ConfigOption("bPalLost", StructTypes.Bool, False)
-    bCharacterRecreateInHardcore = ConfigOption("bCharacterRecreateInHardcore", StructTypes.Bool, False)
-    bInvisibleOtherGuildBaseCampAreaFX = ConfigOption("bInvisibleOtherGuildBaseCampAreaFX", StructTypes.Bool, False)
-    bBuildAreaLimit = ConfigOption("bBuildAreaLimit", StructTypes.Bool, False)
-    ItemWeightRate = ConfigOption("ItemWeightRate", StructTypes.Float, 1.000000)
     ChatPostLimitPerMinute = ConfigOption("ChatPostLimitPerMinute", StructTypes.Int, 10)
-    CrossplayPlatforms = ConfigOption("CrossplayPlatforms", StructTypes.Enum, ["Steam", "Xbox", "PS5", "Mac"])
+    CrossplayPlatforms = ConfigOption("CrossplayPlatforms", StructTypes.Array, ["Steam", "Xbox", "PS5", "Mac"])
+    bIsUseBackupSaveData = ConfigOption("bIsUseBackupSaveData", StructTypes.Bool, True)
     LogFormatType = ConfigOption("LogFormatType", StructTypes.Enum, "Text")
     SupplyDropSpan = ConfigOption("SupplyDropSpan", StructTypes.Float, 180.000000)
     EnablePredatorBossPal = ConfigOption("EnablePredatorBossPal", StructTypes.Bool, True)
@@ -170,9 +229,20 @@ class SettingStructs:
         return getattr(SettingStructs, option_name)
 
 
+ENUM_VALUES: Dict[str, EnumStruct] = {
+    "RandomizerType": EnumStruct("EPalRandomizerType", ["None", "Region", "All"]),
+    "DeathPenalty": EnumStruct("EPalOptionWorldDeathPenalty", ["None", "Item", "ItemAndEquipment", "All"]),
+    "LogFormatType": EnumStruct("LogFormatType", ["Text", "Json"]),
+}
+
+ARRAY_VALUES: Dict[str, ArrayStruct] = {
+    "CrossplayPlatforms": ArrayStruct("EPalAllowConnectPlatform", ["Steam", "Xbox", "PS5", "Mac"])
+}
+
+
 def generate_json_config(config: str) -> Dict:
     json_config = {}
-    tokens = re.findall(r'(\w.*?)=([^"].*?|".*?")((?=,)|$)', config)
+    tokens = re.findall(r'(\w.*?)=([^"(].*?|".*?"|\(.*?\))((?=,)|$)', config)
     for key, value, _ in tokens:
         try:
             if key == "Difficulty":
@@ -181,6 +251,12 @@ def generate_json_config(config: str) -> Dict:
                 value = re.match(r'^"(.*)"$', value.strip()).group(1)
                 # if it was already escaped in the config
                 value = value.replace('\\"', '"')
+            if '(' in value:
+                array_vals = []
+                tokens = re.findall(r'(\w.*?)((?=,)|$)', value.strip("() "))
+                for array_val, _ in tokens:
+                    array_vals.append(array_val)
+                value = set(array_vals)
             config_properties = SettingStructs.get_config_option(key)
             if not config_properties.is_default(value):
                 json_config[key] = config_properties.json_struct(value)
